@@ -246,13 +246,13 @@ namespace cmd
 
         static bool err(const std::string& msg)
         {
-            std::cerr << "Error: " << msg << "\n";
+            std::cerr << "Error: " << msg << std::endl;
             return false;
         }
 
         static void info(const std::string& msg, int code)
         {
-            std::cout << msg << "\n";
+            std::cout << msg << std::endl;
             std::exit(code);
         }
 
@@ -291,7 +291,7 @@ namespace cmd
                     }
                 }
 
-                return err(std::string("argument: Unknown flag ") + flag);
+                return err("argument: Unknown flag " + flag);
 
             next_flag:
                 ;
@@ -337,10 +337,10 @@ namespace cmd
                 _source = std::filesystem::current_path() / _source;
 
             if (!std::filesystem::exists(_source))
-                return err(std::string("Could not find the source file ") + files[0]);
+                return err("Could not find the source file " + files[0]);
 
             if (!contains(source_ext, getExtension(_source)))
-                return err(std::string("Source file is not a valid extension: ") + _source.string());
+                return err("Source file is not a valid extension: " + _source.string());
 
             // Default target is source with default extension.
             _target = _source;
@@ -358,16 +358,16 @@ namespace cmd
                 if (!_target.parent_path().empty() && !std::filesystem::is_directory(_target.parent_path()))
                 {
                     if (_target.has_extension())
-                        return err(std::string("Target file has unknown directory ") + _target.string());
+                        return err("Target file has unknown directory " + _target.string());
 
-                    return err(std::string("Target directory does not exist ") + _target.string());
+                    return err("Target directory does not exist " + _target.string());
                 }
 
                 // If target has no extension, interpret it as a directory.
                 if (!_target.has_extension())
                 {
                     if (!std::filesystem::is_directory(_target))
-                        return err(std::string("Target directory does not exist ") + _target.string());
+                        return err("Target directory does not exist " + _target.string());
 
                     _target = _target / _source.filename();
                     _target.replace_extension(defaultTargetExt());
@@ -378,7 +378,7 @@ namespace cmd
                 return err("Source and target files are the same");
 
             if (!contains(target_ext, getExtension(_target)))
-                return err(std::string("Target file is not a valid extension: ") + _target.string());
+                return err("Target file is not a valid extension: " + _target.string());
 
             cmd::source = _source;
             cmd::target = _target;
