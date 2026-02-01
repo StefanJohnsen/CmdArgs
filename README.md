@@ -61,10 +61,6 @@ int main(int argc, char* argv[])
         std::cout << "Convert is enabled" << std::endl;
     if (cmd::translate)
         std::cout << "Translate is enabled" << std::endl;
-    if (cmd::help)
-        std::cout << "Help is enabled" << std::endl;
-    if (cmd::version)
-        std::cout << "Version is enabled" << std::endl;
 
     return 0;
 }
