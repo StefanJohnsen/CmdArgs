@@ -319,7 +319,7 @@ namespace cmd
             if (files.size() > 2)
                 return err("argument: Too many arguments");
 
-            _source = files[0];
+            _source = files.front();
 
             // Source directory mode: accept existing directory, no target required.
             if (std::filesystem::is_directory(_source))
@@ -337,7 +337,7 @@ namespace cmd
                 _source = std::filesystem::current_path() / _source;
 
             if (!std::filesystem::exists(_source))
-                return err("Could not find the source file " + files[0]);
+                return err("Could not find the source file " + _source.string());
 
             if (!contains(source_ext, getExtension(_source)))
                 return err("Source file is not a valid extension: " + _source.string());
@@ -348,7 +348,7 @@ namespace cmd
 
             if (files.size() == 2)
             {
-                _target = files[1];
+                _target = files.back();
 
                 // If target has no parent path, treat it as relative to the source directory.
                 if (_target.parent_path().empty())
