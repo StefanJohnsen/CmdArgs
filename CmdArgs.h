@@ -129,9 +129,18 @@ namespace cmd
     inline std::filesystem::path source;
     inline std::filesystem::path target;
 
+    static std::string defaultExt(const std::vector<std::string>& list)
+    {
+        return list.empty() ? std::string() : list.front();
+    }
+    static std::string defaultSourceExt()
+    {
+        return defaultExt(source_ext);
+    }
+
     static std::string defaultTargetExt()
     {
-        return target_ext.empty() ? std::string() : target_ext.front();
+        return defaultExt(target_ext);
     }
 
     inline std::string tolower(std::string txt)
