@@ -1,30 +1,12 @@
 #pragma once
-#include <cmath>
 #include <string>
+#include <vector>
 #include <iostream>
 #include <filesystem>
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
-#include <chrono>
-#include <sstream>
-#include <iomanip>
-#include <sys/stat.h>
-#include <vector>
-#include <utility>
-
-#if defined(_WIN32)
-#pragma warning(push)
-#pragma warning(disable : 5105)
-#define NOMINMAX
-#include <windows.h>
-#pragma warning(pop)
-#elif defined(__linux__)
-#include <unistd.h>
-#include <limits.h>
-#else
-#error "Unsupported platform"
-#endif
+#include <cstdlib>
 
 /*
   CmdArgs.h
@@ -33,335 +15,329 @@
 
   This file provides an easy-to-use command-line argument parser for small tools.
   It parses argv into:
-	- source file + optional target file
-	- optional flags
+    - source file or source directory
+    - optional target file or target directory
+    - optional flags
 
-  It also performs file existence checks for:
-	- Verifying that the source file exists before proceeding.
-	- Verifying that the target directory exists before proceeding (if specified).
+  It also performs file system checks for:
+    - Verifying that the source path exists before proceeding.
+      - If the source is a file, it must exist.
+      - If the source is a directory, it must exist and parsing succeeds without requiring a target.
+    - Verifying that the target directory exists before proceeding (if specified).
+      - If the target is a file, its parent directory must exist.
+      - If the target is a directory, it must exist.
 
   Flags:
-	- convert      : Enables or disables the conversion (default: true).
-	- translate    : Enables or disables translation (default: true).
-	- help         : Displays the help text, showing usage instructions.
-	- version      : Displays the version information of the program.
+    - convert      : Enables or disables conversion (default = true).
+    - translate    : Enables or disables translation (default = true).
+    - help         : Displays the help text, showing usage instructions.
+    - version      : Displays the version information of the program.
 
   Flags state can be easily checked as boolean values:
-	- if (convert)   { Conversion logic }
-	- if (translate) { Translation logic }
+    - if (convert)   { Conversion  logic }
+    - if (translate) { Translation logic }
 
   Extension validation:
-	- source_ext / target_ext control which extensions are accepted.
+    - source_ext / target_ext control which extensions are accepted.
+    - The target extension is validated after the final target path is resolved.
 
   Requirements:
-	- C++17 (uses std::filesystem and inline variables)
+    - C++17 (uses std::filesystem and inline variables)
+
+  OS Support:
+    - Windows
+    - Linux
 
   License: MIT
-  Copyright (c) 2024 FalconCoding
   Author: Stefan Falk Johnsen
+  Copyright (c) 2024 FalconCoding
 */
 
 namespace cmd
 {
-	using namespace std;
-	using namespace filesystem;
+    struct cmd_flag
+    {
+        cmd_flag(std::string flag, bool on = false)
+            : _flag(std::move(flag)), on(on), defaultOn(on) {
+        }
 
-	struct cmd_flag
-	{
-		cmd_flag(string flag, bool on = false)
-			: _flag(move(flag)), on(on) {
-		}
+        void clear() { on = defaultOn; }
 
-		operator bool() const { return on; }
-		operator string() const { return _flag; }
+        operator bool() const { return on; }
+        operator std::string() const { return _flag; }
 
-		void operator=(bool set) { on = set; }
+        void operator=(bool set) { on = set; }
 
-		const string& name() const { return _flag; }
-	private:
-		const string _flag;
-		bool on = false;
-	};
+        const std::string& name() const { return _flag; }
+    private:
+        const std::string _flag;
+        bool on = false;
+        bool defaultOn = false;
+    };
 
-	inline string text_version = "MyProgram version: 1.0.0";
+    inline std::string text_version = "MyProgram version: 1.0.0";
 
-	inline const vector<string> source_ext = { "txt", "csv", "json" };
-	inline const vector<string> target_ext = { "csv", "json", "txt" };
+    inline const std::vector<std::string> source_ext = { "txt", "csv", "json" };
+    inline const std::vector<std::string> target_ext = { "csv", "json", "txt" };
 
-	inline cmd_flag convert{ "convert" };
-	inline cmd_flag translate{ "translate", true };
-	inline cmd_flag help{ "help" };
-	inline cmd_flag version{ "version" };
+    inline cmd_flag convert{ "convert", true };
+    inline cmd_flag translate{ "translate", true };
+    inline cmd_flag help{ "help" };
+    inline cmd_flag version{ "version" };
 
-	inline const std::vector<cmd_flag*> cmd_flags = { &convert, &translate, &help, &version };
+    inline const std::vector<cmd_flag*> cmd_flags = { &convert, &translate, &help, &version };
 
-	inline string join(const vector<string>& v, const char* delim)
-	{
-		string out;
-		for (size_t i = 0; i < v.size(); ++i)
-		{
-			out += v[i];
-			if (i + 1 < v.size())
-				out += delim;
-		}
-		return out;
-	}
+    inline std::string join(const std::vector<std::string>& v, const char* delim)
+    {
+        std::string out;
+        for (size_t i = 0; i < v.size(); ++i)
+        {
+            out += v[i];
+            if (i + 1 < v.size())
+                out += delim;
+        }
+        return out;
+    }
 
-	inline string text_help = []()
-		{
-			string s;
+    inline std::string text_help = []()
+        {
+            std::string s;
 
-			s += "Usage: MyProgram [options] <source_file> [target_file]\n";
-			s += "\n";
-			s += "Options:\n";
-			s += "  -convert       Convert the source file to the target format (default)\n";
-			s += "  -translate     Enable translation (default)\n";
-			s += "  -help          Show this help message\n";
-			s += "  -version       Show version information\n";
-			s += "\n";
-			s += "File extensions:\n";
-			s += "  Source: ";
-			s += join(source_ext, ", ");
-			s += "\n";
-			s += "  Target: ";
-			s += join(target_ext, ", ");
-			s += "\n";
-			s += "\n";
-			s += "Notes:\n";
-			s += "  If target_file is omitted, output defaults to source name with the default target extension.\n";
+            s += "\nUsage: MyProgram [options] <source_path> [target_path]\n\n";
+            s += "Options:\n\n";
+            s += "  -convert       Convert the source to the target format (default)\n";
+            s += "  -translate     Enable translation (default)\n";
+            s += "  -help          Show this help message\n";
+            s += "  -version       Show version information\n";
+            s += "\n";
+            s += "File extensions:\n\n";
+            s += "  Source: ";
+            s += join(source_ext, ", ");
+            s += "\n";
+            s += "  Target: ";
+            s += join(target_ext, ", ");
+            s += "\n\n";
+            s += "Notes:\n\n";
+            s += "  Paths are resolved relative to the current working directory.\n";
+            s += "  If target_path is given without a directory, it is placed next to the source file.\n";
+            s += "  If target_path is a directory, output is placed in that directory.\n";
+            s += "  If target_path is omitted, the output name is derived from the source file.\n";
+            s += "  Example:  input.txt  ->  input.csv\n";
+            return s;
+        }();
 
-			return s;
-		}();
+    inline std::filesystem::path source;
+    inline std::filesystem::path target;
 
-	inline path source;
-	inline path target;
+    static std::string defaultTargetExt()
+    {
+        return target_ext.empty() ? std::string() : target_ext.front();
+    }
 
-	static string defaultTargetExt()
-	{
-		return target_ext.empty() ? string() : target_ext.front();
-	}
+    inline std::string tolower(std::string txt)
+    {
+        std::transform(txt.begin(), txt.end(), txt.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return txt;
+    }
 
-	inline string tolower(string txt)
-	{
-		std::transform(txt.begin(), txt.end(), txt.begin(),
-			[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-		return txt;
-	}
+    inline std::string getExtension(const std::filesystem::path& file)
+    {
+        auto ext = tolower(file.extension().string());
 
-	inline string getExtension(const path& file)
-	{
-		auto ext = tolower(file.extension().string());
+        if (!ext.empty() && ext.front() == '.')
+            ext.erase(ext.begin());
 
-		if (!ext.empty() && ext.front() == '.')
-			ext.erase(ext.begin());
+        return ext;
+    }
 
-		return ext;
-	}
+    class CmdArgumentParser
+    {
+    public:
+        CmdArgumentParser() = default;
 
-	inline std::filesystem::path getExecutablePath()
-	{
-#if defined(_WIN32)
-		char path[MAX_PATH];
-		DWORD length = GetModuleFileNameA(nullptr, path, MAX_PATH);
-		if (length == 0 || length == MAX_PATH)
-		{
-			throw std::runtime_error("Unable to get executable path on Windows");
-		}
-		return { path };
-#elif defined(__linux__)
-		char path[PATH_MAX];
-		ssize_t length = readlink("/proc/self/exe", path, sizeof(path) - 1);
-		if (length == -1)
-		{
-			throw std::runtime_error("Unable to get executable path on Linux");
-		}
-		path[length] = '\0';
-		return std::filesystem::path(path);
-#endif
-	}
+        std::filesystem::path source() const { return _source; }
+        std::filesystem::path target() const { return _target; }
 
-	class CmdArgumentParser
-	{
-	public:
-		CmdArgumentParser() = default;
+        bool parse(int argc, char* argv[])
+        {
+            check();
 
-		path source() const { return _source; }
-		path target() const { return _target; }
+            std::vector<std::string> flags;
+            std::vector<std::string> files;
 
-		bool parse(int argc, char* argv[])
-		{
-			check();
+            for (int i = 1; i < argc; ++i)
+            {
+                std::string arg = argv[i] ? argv[i] : "";
+                if (arg.empty()) continue;
 
-			vector<string> flags;
-			vector<string> files;
+                if (arg.front() == '-')
+                    flags.emplace_back(arg);
+                else
+                    files.emplace_back(arg);
+            }
 
-			for (int i = 1; i < argc; ++i)
-			{
-				string arg = argv[i] ? argv[i] : "";
-				if (arg.empty()) continue;
+            if (!parseFlags(flags, files.size()))
+                return false;
 
-				if (arg.front() == '-')
-					flags.emplace_back(arg);
-				else
-					files.emplace_back(arg);
-			}
+            return parseFiles(files);
+        }
 
-			if (!parseFlags(flags, files.size()))
-				return false;
+    private:
+        template <class T, class V>
+        static bool contains(const T& list, const V& value)
+        {
+            return std::find(list.begin(), list.end(), value) != list.end();
+        }
 
-			return parseFiles(files);
-		}
+        static bool err(const std::string& msg)
+        {
+            std::cerr << "Error: " << msg << "\n";
+            return false;
+        }
 
-	private:
-		template <class T, class V>
-		static bool contains(const T& list, const V& value)
-		{
-			return find(list.begin(), list.end(), value) != list.end();
-		}
+        static void info(const std::string& msg, int code)
+        {
+            std::cout << msg << "\n";
+            std::exit(code);
+        }
 
-		static bool err(const string& msg)
-		{
-			cerr << "Error: " << msg << "\n";
-			return false;
-		}
+        void check()
+        {
+            cmd::source.clear();
+            cmd::target.clear();
 
-		[[noreturn]] static void info(const string& msg, int code)
-		{
-			cout << msg << "\n";
-			exit(code);
-		}
+            for (auto* f : cmd_flags) f->clear();
 
-		void check()
-		{
-			cmd::source.clear();
-			cmd::target.clear();
+            if (cmd::source_ext.empty() || cmd::target_ext.empty())
+                throw std::runtime_error("Error: source_ext or target_ext is not defined.");
+            if (!contains(cmd_flags, &help))
+                throw std::runtime_error("Error: cmd_flags must contain 'help' flag.");
+            if (!contains(cmd_flags, &version))
+                throw std::runtime_error("Error: cmd_flags must contain 'version' flag.");
+            if (cmd_flags.size() < 3)
+                throw std::runtime_error("Error: cmd_flags is not defined.");
+        }
 
-			if (cmd::source_ext.empty() || cmd::target_ext.empty())
-				throw runtime_error("Error: source_ext or target_ext is not defined.");
-			if (cmd::source_ext == cmd::target_ext)
-				throw runtime_error("Error: source_ext and target_ext cannot be the same.");
-			if (!contains(cmd_flags, &help))
-				throw runtime_error("Error: cmd_flags must contain 'help' flag.");
-			if (!contains(cmd_flags, &version))
-				throw runtime_error("Error: cmd_flags must contain 'version' flag.");
-			if (cmd_flags.size() < 3)
-				throw runtime_error("Error: cmd_flags is not defined.");
-		}
+        bool parseFlags(const std::vector<std::string>& flags, const size_t countFiles)
+        {
+            size_t countFlags = 0;
 
-		bool parseFlags(const vector<string>& flags, const size_t countFiles)
-		{
-			size_t countFlags = 0;
+            for (const auto& flag : flags)
+            {
+                for (auto* f : cmd_flags)
+                {
+                    const std::string s = *f;
 
-			for (const auto& flag : flags)
-			{
-				for (auto* f : cmd_flags)
-				{
-					const string s = *f;
+                    if (flag == "-" + s || flag == "--" + s)
+                    {
+                        *f = true;
+                        ++countFlags;
+                        goto next_flag;
+                    }
+                }
 
-					if (flag == "-" + s || flag == "--" + s)
-					{
-						*f = true;
-						++countFlags;
-						goto next_flag;
-					}
-				}
+                return err(std::string("argument: Unknown flag ") + flag);
 
-				return err(string("argument: Unknown flag ") + flag);
+            next_flag:
+                ;
+            }
 
-			next_flag:
-				;
-			}
+            if (help || version)
+            {
+                if (countFlags > 1 || countFiles != 0)
+                    return err("argument: Too many arguments");
 
-			if (help || version)
-			{
-				if (countFlags > 1 || countFiles != 0)
-					return err("argument: Too many arguments");
+                if (help)
+                    info(text_help, 0);
 
-				if (help)
-					info(text_help, 0);
+                info(text_version, 0);
+            }
 
-				info(text_version, 0);
-			}
+            return true;
+        }
 
-			return true;
-		}
+        bool parseFiles(const std::vector<std::string>& files)
+        {
+            if (files.empty())
+                return err("No source file specified");
 
-		bool parseFiles(const vector<string>& files)
-		{
-			if (files.empty())
-				return err("No source file specified");
+            if (files.size() > 2)
+                return err("argument: Too many arguments");
 
-			if (files.size() > 2)
-				return err("argument: Too many arguments");
+            _source = files[0];
 
-			_source = files[0];
+            // Source directory mode: accept existing directory, no target required.
+            if (std::filesystem::is_directory(_source))
+            {
+                if (files.size() > 1)
+                    return err("argument: Too many arguments");
 
-			if (is_directory(_source))
-			{
-				if (files.size() > 1)
-					return err("argument: Too many arguments");
+                cmd::source = _source;
+                cmd::target.clear();
+                return true;
+            }
 
-				cmd::source = _source;
-				return true;
-			}
+            // If source has no parent path, treat it as relative to the current working directory.
+            if (_source.parent_path().empty())
+                _source = std::filesystem::current_path() / _source;
 
-			if (_source.parent_path().empty())
-				_source = getExecutablePath().parent_path() / _source;
+            if (!std::filesystem::exists(_source))
+                return err(std::string("Could not find the source file ") + files[0]);
 
-			if (!exists(_source))
-				return err(string("Could not find the source file ") + files[0]);
+            if (!contains(source_ext, getExtension(_source)))
+                return err(std::string("Source file is not a valid extension: ") + _source.string());
 
-			if (!contains(source_ext, getExtension(_source)))
-				return err(string("Source file is not a valid extension: ") + _source.string());
+            // Default target is source with default extension.
+            _target = _source;
+            _target.replace_extension(defaultTargetExt());
 
-			_target = _source;
-			_target.replace_extension(defaultTargetExt());
+            if (files.size() == 2)
+            {
+                _target = files[1];
 
-			if (files.size() == 2)
-			{
-				_target = files[1];
+                // If target has no parent path, treat it as relative to the source directory.
+                if (_target.parent_path().empty())
+                    _target = _source.parent_path() / _target;
 
-				if (_target.parent_path().empty())
-					_target = _source.parent_path() / _target;
-				else
-				{
-					if (!exists(_target.parent_path()))
-					{
-						if (_target.has_extension())
-							return err(string("Target file has unknown directory ") + _target.string());
-						else
-							return err(string("Target directory does not exist ") + _target.string());
-					}
-				}
+                // If target has a parent path, ensure the parent is a directory.
+                if (!_target.parent_path().empty() && !std::filesystem::is_directory(_target.parent_path()))
+                {
+                    if (_target.has_extension())
+                        return err(std::string("Target file has unknown directory ") + _target.string());
 
-				if (!_target.has_extension())
-				{
-					if (!exists(_target))
-						return err(string("Target directory does not exist ") + _target.string());
+                    return err(std::string("Target directory does not exist ") + _target.string());
+                }
 
-					_target = _target / _source.filename();
-					_target.replace_extension(defaultTargetExt());
-				}
-			}
+                // If target has no extension, interpret it as a directory.
+                if (!_target.has_extension())
+                {
+                    if (!std::filesystem::is_directory(_target))
+                        return err(std::string("Target directory does not exist ") + _target.string());
 
-			if (tolower(_source.string()) == tolower(_target.string()))
-				return err("Source and target files are the same");
+                    _target = _target / _source.filename();
+                    _target.replace_extension(defaultTargetExt());
+                }
+            }
 
-			if (!contains(target_ext, getExtension(_target)))
-				return err(string("Target file is not a valid extension: ") + _target.string());
+            if (tolower(_source.string()) == tolower(_target.string()))
+                return err("Source and target files are the same");
 
-			cmd::source = _source;
-			cmd::target = _target;
+            if (!contains(target_ext, getExtension(_target)))
+                return err(std::string("Target file is not a valid extension: ") + _target.string());
 
-			return true;
-		}
+            cmd::source = _source;
+            cmd::target = _target;
 
-		path _source, _target;
-	};
+            return true;
+        }
 
-	static bool parse(int argc, char* argv[])
-	{
-		CmdArgumentParser command;
-		return command.parse(argc, argv);
-	}
+        std::filesystem::path _source, _target;
+    };
+
+    static bool parse(int argc, char* argv[])
+    {
+        CmdArgumentParser command;
+        return command.parse(argc, argv);
+    }
 }
