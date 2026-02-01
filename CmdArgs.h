@@ -75,30 +75,27 @@ namespace cmd
         bool defaultOn = false;
     };
 
+    std::string join(const std::vector<std::string>& v, const char* delim);
+
+    //-[ CmdArgs Setup for Your Program ]----------------------------------------------------------------------
+
+    // Set your program name and version here
     inline std::string text_version = "MyProgram version: 1.0.0";
 
+    // Set your accepted source and target extensions here (first is default)
     inline const std::vector<std::string> source_ext = { "txt", "csv", "json" };
     inline const std::vector<std::string> target_ext = { "csv", "json", "txt" };
 
+    // Set your command line flags here (true means you enable the flag by default)
     inline cmd_flag convert{ "convert", true };
-    inline cmd_flag translate{ "translate", true };
+    inline cmd_flag translate{ "translate"};
     inline cmd_flag help{ "help" };
     inline cmd_flag version{ "version" };
 
+    // Register your flags here (help and version must be included)
     inline const std::vector<cmd_flag*> cmd_flags = { &convert, &translate, &help, &version };
 
-    inline std::string join(const std::vector<std::string>& v, const char* delim)
-    {
-        std::string out;
-        for (size_t i = 0; i < v.size(); ++i)
-        {
-            out += v[i];
-            if (i + 1 < v.size())
-                out += delim;
-        }
-        return out;
-    }
-
+    // Define your help text here
     inline std::string text_help = []()
         {
             std::string s;
@@ -106,7 +103,7 @@ namespace cmd
             s += "\nUsage: MyProgram [options] <source_path> [target_path]\n\n";
             s += "Options:\n\n";
             s += "  -convert       Convert the source to the target format (default)\n";
-            s += "  -translate     Enable translation (default)\n";
+            s += "  -translate     Enable translation (must be specified)\n";
             s += "  -help          Show this help message\n";
             s += "  -version       Show version information\n";
             s += "\n";
@@ -126,22 +123,32 @@ namespace cmd
             return s;
         }();
 
+    //-[ CmdArgs Global Functions ]------------------------------------------------------------
+
+    // Here are the global variables where the parsed source and target paths are stored
+    // after parsing (if you prefer global parsing).
     inline std::filesystem::path source;
     inline std::filesystem::path target;
 
+    // Function to get the default extension (the first in the list)
     static std::string defaultExt(const std::vector<std::string>& list)
     {
         return list.empty() ? std::string() : list.front();
     }
+
+    // Returns the default source extension (from the source_ext list)
     static std::string defaultSourceExt()
     {
         return defaultExt(source_ext);
     }
 
+    // Returns the default target extension (from the target_ext list)
     static std::string defaultTargetExt()
     {
         return defaultExt(target_ext);
     }
+
+    //-----------------------------------------------------------------------------------------
 
     inline std::string tolower(std::string txt)
     {
@@ -159,6 +166,43 @@ namespace cmd
 
         return ext;
     }
+
+    inline std::string join(const std::vector<std::string>& v, const char* delim)
+    {
+        std::string out;
+        for (size_t i = 0; i < v.size(); ++i)
+        {
+            out += v[i];
+            if (i + 1 < v.size())
+                out += delim;
+        }
+        return out;
+    }
+
+    //-----------------------------------------------------------------------------------------
+    // Command-line Argument Parser Class
+    //
+    // This class allows you to parse command-line arguments directly, 
+    // providing an alternative to using global parsing. If you prefer 
+    // to work with the parsed arguments in a more encapsulated manner, 
+    // you can use this class.
+    //
+    // Usage example:
+    // 
+    //    CmdArgumentParser parser;
+    // 
+    //    if (!parser.parse(argc, argv)) return 1;
+    // 
+    //    auto source = cmd::source;  // Parsed source path (from global)
+    //    auto target = cmd::target;  // Parsed target path (from global)
+    //
+    // After parsing, you can check the flags using the global flag variables:
+    // 
+    //    if (cmd::convert)   { ... }   // Checks if '-convert' was specified (default: true)
+    //    if (cmd::translate) { ... }   // Checks if '-translate' was specified
+    //
+    // The flags are globally accessible, even after parsing.
+    //-----------------------------------------------------------------------------------------
 
     class CmdArgumentParser
     {
@@ -193,6 +237,7 @@ namespace cmd
         }
 
     private:
+
         template <class T, class V>
         static bool contains(const T& list, const V& value)
         {
@@ -343,6 +388,30 @@ namespace cmd
 
         std::filesystem::path _source, _target;
     };
+
+    //---------------------------------------------------------------------------------------------------------
+    // Command-line Argument Parser for Global Parsing
+    //
+    // Usage example:
+    // 
+    // If you prefer using global parsing (recommended), follow this approach:
+    //
+    //    if (!cmd::parse(argc, argv)) return 1;  // Parse the arguments
+    //
+    //    auto source = cmd::source;  // Parsed source file or directory
+    //    auto target = cmd::target;  // Parsed target file or directory
+    //
+    // To check flags, you can use the following pattern:
+    //
+    //    if (cmd::convert)   { ... }   // Checks if '-convert' was specified (default: true)
+    //    if (cmd::translate) { ... }   // Checks if '-translate' was specified
+    //
+    // Additionally, you can retrieve the default extensions like this:
+    //
+    //    auto defaultSourceExt = cmd::defaultSourceExt();  // Default source extension (first in source_ext)
+    //    auto defaultTargetExt = cmd::defaultTargetExt();  // Default target extension (first in target_ext)
+    //
+    //---------------------------------------------------------------------------------------------------------        
 
     static bool parse(int argc, char* argv[])
     {
