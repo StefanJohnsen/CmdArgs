@@ -29,7 +29,7 @@ std::vector<std::string> target_ext = { "csv", "json", "txt" };
 The following demo flags are defined:
 
 ```cpp
-cmd_flag convert{ "convert", true };
+cmd_flag convert{ "convert", true };    <- ex where convert is on
 cmd_flag translate{ "translate" };
 cmd_flag help{ "help" };
 cmd_flag version{ "version" };
@@ -61,10 +61,6 @@ int main(int argc, char* argv[])
         std::cout << "Convert is enabled" << std::endl;
     if (cmd::translate)
         std::cout << "Translate is enabled" << std::endl;
-    if (cmd::help)
-        std::cout << "Help is enabled" << std::endl;
-    if (cmd::version)
-        std::cout << "Version is enabled" << std::endl;
 
     return 0;
 }
