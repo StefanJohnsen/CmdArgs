@@ -166,5 +166,14 @@ Notes:
   Example:  input.txt  ->  input.csv
 ```
 
+# Single-file mode (no target path)
+If you want a single-file parser, you can set target_ext to empty.
+In this mode, the parser accepts only one input path (source), and does not accept a target path.
+
+```cpp
+std::vector<std::string> source_ext = { "txt", "csv", "json" };
+std::vector<std::string> target_ext = { };
+```
+
 ## License
 This software is released under the MIT License terms.
