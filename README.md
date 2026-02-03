@@ -13,7 +13,7 @@ This parser was created after repeatedly having to write similar argument parser
 - Linux
 - macOS
 
-# Usage
+## Usage
 
 Copy CmdArgs.h to your project and include the file.
 
@@ -35,9 +35,9 @@ cmd_flag help{ "help" };
 cmd_flag version{ "version" };
 ```
 
-***There are also demo version text and help text that need to be adapted.***
+___There are also demo version text and help text that need to be adapted.___
 
-# Example code
+## Example code
 
 ```cpp
 #include <iostream>
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 }
 ```
 
-# Run code (Simulating Command-Line Arguments)
+## Run code (Simulating Command-Line Arguments)
 
 Assume you are in the directory C:\App\MyProgram.exe. Here are a few test scenarios:
 
@@ -79,7 +79,7 @@ Target: C:\App\target.csv
 Convert is enabled
 ```
 
-***PS: Convert is enabled by default and does not need to be specified as shown above.****
+___PS: Convert is enabled by default and does not need to be specified as shown above.___
 
 ### Test: Basic Conversion Command using no target (default target ext is csv)
 
@@ -166,7 +166,7 @@ Notes:
   Example:  input.txt  ->  input.csv
 ```
 
-# Single-file mode (no target path)
+## Single-file mode (no target path)
 If you want a single-file parser, you can set target_ext to empty.
 In this mode, the parser accepts only one input path (source), and does not accept a target path.
 
