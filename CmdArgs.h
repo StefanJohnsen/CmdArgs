@@ -19,6 +19,8 @@
   License: MIT
   Author: Stefan Falk Johnsen
   Copyright (c) 2026 FalconCoding
+
+  GitHub: https://github.com/StefanJohnsen/CmdArgs
 ----------------------------------------------------------------*/
 
 namespace cmd
