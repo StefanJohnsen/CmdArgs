@@ -13,7 +13,7 @@ This parser was created after repeatedly having to write similar argument parser
 - Linux
 - macOS
 
-# Usage
+## Usage
 
 Copy CmdArgs.h to your project and include the file.
 
@@ -35,9 +35,9 @@ cmd_flag help{ "help" };
 cmd_flag version{ "version" };
 ```
 
-***There are also demo version text and help text that need to be adapted.***
+___There are also demo version text and help text that need to be adapted.___
 
-# Example code
+## Example code
 
 ```cpp
 #include <iostream>
@@ -66,11 +66,11 @@ int main(int argc, char* argv[])
 }
 ```
 
-# Run code (Simulating Command-Line Arguments)
+## Run code (Simulating Command-Line Arguments)
 
 Assume you are in the directory C:\App\MyProgram.exe. Here are a few test scenarios:
 
-### Test: Basic Conversion Command
+#### Test: Basic Conversion Command
 
 ```bash
 C:\App>MyProgram.exe source.txt target.csv
@@ -79,9 +79,9 @@ Target: C:\App\target.csv
 Convert is enabled
 ```
 
-***PS: Convert is enabled by default and does not need to be specified as shown above.****
+___PS: Convert is enabled by default and does not need to be specified as shown above.___
 
-### Test: Basic Conversion Command using no target (default target ext is csv)
+#### Test: Basic Conversion Command using no target (default target ext is csv)
 
 ```bash
 C:\App>MyProgram.exe source.txt
@@ -90,7 +90,7 @@ Target: C:\App\source.csv      <- same name as source.txt, but with .csv extensi
 Convert is enabled
 ```
 
-### Test: Basic Conversion Command using full path
+#### Test: Basic Conversion Command using full path
 
 ```bash
 C:\App>MyProgram.exe C:\App\source.txt C:\temp\target.csv
@@ -99,7 +99,7 @@ Target: C:\temp\target.csv
 Convert is enabled
 ```
 
-### Test: Basic Conversion Command using target directory only
+#### Test: Basic Conversion Command using target directory only
 
 ```bash
 C:\App>MyProgram.exe C:\App\source.txt C:\temp
@@ -108,7 +108,7 @@ Target: C:\temp\source.csv
 Convert is enabled
 ```
 
-### Test: -translate enabled
+#### Test: -translate enabled
 
 ```bash
 C:\App>MyProgram.exe -translate source.json target.csv
@@ -118,28 +118,28 @@ Convert is enabled
 Translate is enabled
 ```
 
-### Test: Invalid Source File Extension
+#### Test: Invalid Source File Extension
 
 ```bash
 C:\App>MyProgram.exe source.jpg target.csv
 Error: Source file is not a valid extension: C:\App\source.jpg
 ```
 
-### Test: Non existing Source File
+#### Test: Non existing Source File
 
 ```bash
 C:\App>MyProgram.exe source.cpp
 Error: Could not find the source file C:\App\source.cpp
 ```
 
-### Test: -version enabled
+#### Test: -version enabled
 
 ```bash
 C:\App>MyProgram.exe -version
 MyProgram version: 1.0.0
 ```
 
-### Test: -help enabled
+#### Test: -help enabled
 
 ```bash
 C:\App>MyProgram.exe -help
@@ -166,7 +166,7 @@ Notes:
   Example:  input.txt  ->  input.csv
 ```
 
-# Single-file mode (no target path)
+## Single-file mode (no target path)
 If you want a single-file parser, you can set target_ext to empty.
 In this mode, the parser accepts only one input path (source), and does not accept a target path.
 
