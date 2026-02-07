@@ -1,3 +1,4 @@
+![Banner](banner.jpg)
 # CmdArgs - Command-Line Argument Parser
 
 CmdArgs is a header-only utility that provides an easy-to-use command-line argument parser designed for small tools and utilities. This solution simplifies the management of source and target file paths, flags, and file extensions. It is a self-contained parser that requires no third-party dependencies, relying only on standard C++17 headers. 
